@@ -1,0 +1,138 @@
+<html>
+  <head>
+    <style>
+      #container {
+        position: relative;
+        height: 600px;
+        border: 1px solid black;
+      }
+      #map {
+        position: absolute;
+        background-color: black;
+      }
+      #overlay {
+        position: absolute;
+      }
+      #survey {
+        position:absolute;
+        right: 0;
+        width: 600px;
+      }
+      #day {
+        width: 400px;
+        float: left;
+      }
+      #time {
+        width: 800px;
+        float: left;
+      }
+
+      .origin {
+        fill: rgb(200, 255, 200);
+        fill-opacity: 0.2;
+        stroke: rgb(200, 255, 200);
+      }
+      .samples {
+        fill: rgb(255, 100, 100);
+        fill-opacity: 0.2;
+        stroke: rgb(255, 100, 100);
+        pointer-events: none;
+      }
+      .day {
+        fill: sienna;
+        fill-opacity: 0.8;
+        stroke: sienna;
+      }
+      .time {
+        fill: mediumslateblue;
+        fill-opacity: 0.8;
+        stroke: mediumslateblue;
+      }
+      text {
+        font-family: "Helvetica";
+      }
+
+
+      #brush {
+      }
+      #time {
+      }
+      #controls {
+        margin: 10px;
+      }
+      .background {
+        visibility: visible !important;
+        fill: #4B9E9E;
+      }
+      .extent {
+        visibility: visible !important;
+        fill: #78C5C5;
+      }
+      .resize rect {
+        visibility: visible !important;
+        fill: #276C86;
+      }
+      .selected {
+        border: 1px solid red;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="text/template" id="body">
+      <div id="controls">
+      <input type="button" value="origin" class="{{if !_page.destination}}selected{{/if}}" on-click="destination('origin')">
+      <input type="button" value="destination" class="{{if _page.destination}}selected{{/if}}" on-click="destination('destination')">
+      <input type="button" value="sample" on-click="sample()">
+      </div>
+      <div id="container">
+        <canvas id="map" width=600 height=600>
+        </canvas>
+        <svg id="overlay" width=600 height=600>
+        </svg>
+        <div id="survey">
+         <p class="survay">
+           ID: {{_page.survey.response_ID}}
+         </p>
+         <p class="survay">
+           Day: {{_page.survey.day}}
+         </p>
+         <p class="survay">
+           Time: {{_page.survey.time}}
+         </p>
+         <p class="survay">
+           # in buffer: {{_page.included.length}}
+         </p>
+         <p class="survay">
+           # same time + date: {{_page.survey.same.length}}
+         </p>
+        </div>
+      </div>
+      <div id="day">
+        <svg width=400 height=300></svg>
+      </div>
+      <div id="time">
+        <svg width=800 height=300></svg>
+      </div>
+    </script>
+    <script type="text/template" id="loader">
+      <!-- taken from: http://codepen.io/jxnblk/pen/Byvzr -->
+      <svg class="icon-loading" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+        <path opacity=".25" d="M16 0 A16 16 0 0 0 16 32 A16 16 0 0 0 16 0 M16 4 A12 12 0 0 1 16 28 A12 12 0 0 1 16 4"/>
+        <path d="M16 0 A16 16 0 0 1 32 16 L28 16 A12 12 0 0 0 16 4z">
+          <animateTransform attributeName="transform"          type="rotate" from="0 16 16" to="360 16 16" dur=".8s" repeatCount="indefinite" />
+        </path>
+      </svg>
+    </script>
+
+    <script src="lib/derby-standalone.min.js"></script>
+    <script src="lib/d3.min.js"></script>
+    <script src="lib/topojson.v1.min.js"></script>
+    <script src="lib/crossfilter.v1.min.js"></script>
+    <script src="util.js"></script>
+    <script src="samples.js"></script>
+</body>
+
+
+
+
+</html>

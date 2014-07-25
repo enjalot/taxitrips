@@ -1,7 +1,24 @@
+var app = derby.createApp();
+app.registerViews();
+
+//app.component("frame", Frame);
+//app.component("definition", Definition);
+// create the page and expose the model for use in the console
+var page = app.createPage();
+var model = window.MODEL = page.model;
+// render the main template
+document.body.appendChild(page.getFragment('body'));
+
+
+///////////////////// CONTROLLER CODE ////////////////////////////////
+model.set("_page.loading", true); 
+
+ 
+
 d3.json("lib/busroutes.json", function(err, routes) {
 d3.csv("data/taxidata2.csv", function(err, trips) {
-d3.csv("data/zeros.csv", function(err, zeros) {
-d3.csv("data/surveydata2.csv", function(err, surveys) {
+d3.csv("data/ridesourcing-sample1.csv", function(err, surveys) {
+  model.set("_page.loading", false)
   console.log("trips", trips[0])
   console.log("num trips", trips.length)
   console.log("surveys", surveys[0])
@@ -9,30 +26,21 @@ d3.csv("data/surveydata2.csv", function(err, surveys) {
 
   var width = 600;
   var height = 600;
-  //var xf = crossfilter(trips);
-  //var dayof = xf.dimension(function(d) { return d.dayof });
-  //var time = xf.dimension(function(d) { return +d.time});
-  /*
-  var tcScale = d3.scale.linear()
-  .domain([1, 48])
-  .range([0, 300])
-  var brush = d3.svg.brush()
-  .x(tcScale)
-  brush.extent([1, 3])
-  var brushg = d3.select("#brush")
-  brush(brushg)
-  brushg.selectAll("rect").attr("height", 30)
-  brush.on("brushend", filterTime);
-  function filterTime() {
-    var ext = brush.extent();
-    //console.log("extent", ext)
-    time.filter(ext)
 
-    d3.select("#time").text(ext[0] + " - " + ext[1])
-    var sub = time.top(Infinity);
-    render(sub);
+  var i = 0;
+  var sampled = [];
+  var zeros = [];
+  //start();
+  function start() {
+    i = 0;
+    sampled = [];
+    zeros = [];
+    sample(surveys[0], i);
   }
-  */
+  function done() {
+    console.log("done", sampled.length)
+    model.set("_page.sampled", sampled)
+  }
 
   var canvas = document.getElementById('map');
   var ctx = canvas.getContext('2d');
@@ -46,42 +54,121 @@ d3.csv("data/surveydata2.csv", function(err, surveys) {
     .projection(projection)
     .context(ctx);
 
+  model.set("_page.destination", true)
+  app.proto.destination = function(type) {
+    console.log("tpe", type)
+    model.set("_page.destination", type == "destination");
+  };
 
+  app.proto.sample = function() {
+    console.log("start")
+    start();
+  };
+
+  model.on("change", "_page.destination", function(){
+    renderSurveys()
+    renderSampled()
+  })
+
+
+  model.on("all", "_page.sampled**", function(){
+    console.log("all")
+    renderSampled()
+  })
+
+  model.on("change", "_page.sampled", function(){
+    console.log("changed")
+    renderSampled()
+  })
+
+
+  function proj(d) {
+    if(model.get("_page.destination")) {
+      console.log("a")
+      return projection([d.d_lng, d.d_lat])
+    }
+    console.log("b")
+    return projection([d.o_lng, d.o_lat])
+  }
+
+  var svg = d3.select("#overlay");
   function renderSurveys() {
-    var svg = d3.select("#overlay");
+    console.log("od", model.get("_page.destination"))
 
-    var circles = svg.selectAll("circle.survey")
-      .data(surveys)
-    circles.enter().append("circle").classed("survey", true)
-    circles.attr({
-      cx: function(d) { return projection([d.d_lng, d.d_lat])[0]},
-      cy: function(d) { return projection([d.d_lng, d.d_lat])[1]},
-      r: 10
-    })
+    var circles = svg.selectAll("circle.origin")
+      .data(surveys, function(d) { return d.response_ID })
+
+    circles.exit().remove();
+    circles.enter().append("circle").classed("origin", true)
     .on("click", renderIncluded);
 
-    circles2 = svg.selectAll("circle.zero")
-      .data(zeros)
-    circles2.enter().append("circle").classed("zero", true)
-    circles2.attr({
-      cx: function(d) { return projection([d.d_lng, d.d_lat])[0]},
-      cy: function(d) { return projection([d.d_lng, d.d_lat])[1]},
-      r: 12
-    })
+    circles
+    .transition()
+      .duration(2000)
+      .ease("linear")
+      .attr({
+        cx: function(d) { return proj(d)[0]},
+        cy: function(d) { return proj(d)[1]},
+        r: 10
+      })
+
+  }
+
+  function renderSampled() {
+    var circles = svg.selectAll("circle.samples")
+      .data(sampled, function(d) { return d.response_ID })
+
+    circles.exit().remove();
+    circles.enter().append("circle").classed("samples", true)
+
+    circles
+    .transition()
+      .duration(2000)
+      .ease("linear")
+      .attr({
+        cx: function(d) { return proj(d)[0]},
+        cy: function(d) { return proj(d)[1]},
+        r: 10
+      })
+
+  }
+
+
+  function sample(survey, i){
+    //included = inBuffer(survey, trips);
+    //same = sameTime(survey, included)
+    var same = sameTime(survey, trips)
+    console.log(survey.response_ID, same.length)
+    if(!same.length) {
+      zeros.push(survey);
+    } else {
+      var random = Math.floor(Math.random() * same.length);
+      var smpl = same[random]
+      smpl.response_ID = survey.response_ID
+      sampled.push(smpl)
+      console.log("survey ", i)
+    }
+    i++;
+    if(i < surveys.length) {
+      setTimeout(function() { 
+        sample(surveys[i], i)
+      })
+    } else {
+      done();
+    }
   }
 
 
   function renderIncluded(d) {
     console.log(d);
-    var included = inBuffer(d, trips);
+    //var included = inBuffer(d, trips);
+    var included = trips;
     render(included);
     histo(included, "day");
     histo(included, "time");
     renderInfo(d, included);
     //histoTime(included);
   }
-
-  
 
   //filterTime();
   renderIncluded(surveys[0])
@@ -108,6 +195,7 @@ d3.csv("data/surveydata2.csv", function(err, surveys) {
 
     var trip;
     var point;
+    /*
     for(var i = 0; i < sub.length; i++){ 
       trip = sub[i];
 
@@ -119,25 +207,17 @@ d3.csv("data/surveydata2.csv", function(err, surveys) {
       ctx.arc(point[0], point[1], 3, 0, 2 * Math.PI, false);
       ctx.fill()
     } 
+    */
   }
 
   function renderInfo(d, included) {
     var html = d3.select("#survey")
-    var survay = html.selectAll("p.survay")
-    .data([d], function(d) { return d.response_ID })
-    survay.exit().remove();
-    survay.enter().append("p").classed("survay", true);
-    survay.append("p").text(function(d) { return "ID: " + d.response_ID})
-    survay.append("p").text(function(d) { return "Day: " + d.day})
-    survay.append("p").text(function(d) { return "Time: " + d.time})
-
+    model.set("_page.survey", d)
     var same = sameTime(d, included)
-
-    survay.append("p").text("# in buffer: " + included.length);
-    survay.append("p").text("# Same day + time: " + same.length);
-
-    var random = Math.floor(Math.random() * same.length);
-    console.log("randomly selected", same[random])
+    model.set("_page.included", included)
+    model.set("_page.same", same)
+    //var random = Math.floor(Math.random() * same.length);
+    //var smpl = same[random];
   }
 
   function histo(sub, type) {
@@ -195,5 +275,3 @@ d3.csv("data/surveydata2.csv", function(err, surveys) {
 });
 });
 });
-});
-

@@ -1,0 +1,103 @@
+<html>
+  <head>
+    <style>
+      #container {
+        position: relative;
+        height: 600px;
+        border: 1px solid black;
+      }
+      #map {
+        position: absolute;
+      }
+      #overlay {
+        position: absolute;
+      }
+      #survey {
+        position:absolute;
+        right: 0;
+        width: 600px;
+      }
+      #day {
+        width: 400px;
+        float: left;
+      }
+      #time {
+        width: 800px;
+        float: left;
+      }
+
+      .survey {
+        fill: rgb(200, 255, 200);
+        fill-opacity: 0.2;
+        stroke: rgb(200, 255, 200);
+      }
+      .zero {
+        fill: rgb(255, 100, 100);
+        fill-opacity: 0.2;
+        stroke: rgb(255, 100, 100);
+        pointer-events: none;
+      }
+      .day {
+        fill: sienna;
+        fill-opacity: 0.8;
+        stroke: sienna;
+      }
+      .time {
+        fill: mediumslateblue;
+        fill-opacity: 0.8;
+        stroke: mediumslateblue;
+      }
+      text {
+        font-family: "Helvetica";
+      }
+
+
+      #brush {
+      }
+      #time {
+      }
+      #controls {
+        margin: 10px;
+      }
+      .background {
+        visibility: visible !important;
+        fill: #4B9E9E;
+      }
+      .extent {
+        visibility: visible !important;
+        fill: #78C5C5;
+      }
+      .resize rect {
+        visibility: visible !important;
+        fill: #276C86;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="controls">
+      <svg id="brush" width=300 height=30></svg> 
+      <div id="time"></div>
+    </div>
+    <div id="container">
+      <canvas id="map" width=600 height=600>
+      </canvas>
+      <svg id="overlay" width=600 height=600>
+      </svg>
+      <div id="survey">
+      </div>
+    </div>
+    <div id="day">
+      <svg width=400 height=300></svg>
+    </div>
+    <div id="time">
+      <svg width=800 height=300></svg>
+    </div>
+
+
+    <script src="lib/d3.min.js"></script>
+    <script src="lib/topojson.v1.min.js"></script>
+    <script src="lib/crossfilter.v1.min.js"></script>
+    <script src="taxi.js"></script>
+  </body>
+</html>

@@ -27,7 +27,7 @@
         float: left;
       }
 
-      .origin {
+      .survey {
         fill: rgb(200, 255, 200);
         fill-opacity: 0.2;
         stroke: rgb(200, 255, 200);
@@ -36,6 +36,13 @@
         fill: rgb(255, 100, 100);
         fill-opacity: 0.2;
         stroke: rgb(255, 100, 100);
+        pointer-events: none;
+      }
+
+      .connector {
+        fill: none;
+        stroke: rgb(255, 255, 255);
+        stroke-opacity: 0.5;
         pointer-events: none;
       }
       .day {
@@ -47,6 +54,11 @@
         fill: mediumslateblue;
         fill-opacity: 0.8;
         stroke: mediumslateblue;
+      }
+
+      .progress .bg {
+        stroke: black;
+        fill:none;
       }
       text {
         font-family: "Helvetica";
@@ -83,6 +95,11 @@
       <input type="button" value="origin" class="{{if !_page.destination}}selected{{/if}}" on-click="destination('origin')">
       <input type="button" value="destination" class="{{if _page.destination}}selected{{/if}}" on-click="destination('destination')">
       <input type="button" value="sample" on-click="sample()">
+      <span><input type="checkbox" checked="{{_page.useInBuffer}}">Use In Buffer</span>
+      <div class="progress"><svg width=300 height=40>
+        <rect x=5 y=5 height=30 width="{{progress(_page.sampleProgress)}}"></rect>
+        <rect class="bg" x=5 y=5 height=30 width=250></rect>
+      </svg></div>
       </div>
       <div id="container">
         <canvas id="map" width=600 height=600>
@@ -103,16 +120,18 @@
            # in buffer: {{_page.included.length}}
          </p>
          <p class="survay">
-           # same time + date: {{_page.survey.same.length}}
+           # same time + date: {{_page.same.length}}
          </p>
         </div>
       </div>
+      <!--
       <div id="day">
         <svg width=400 height=300></svg>
       </div>
       <div id="time">
         <svg width=800 height=300></svg>
       </div>
+      -->
     </script>
     <script type="text/template" id="loader">
       <!-- taken from: http://codepen.io/jxnblk/pen/Byvzr -->

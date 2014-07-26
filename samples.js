@@ -1,6 +1,9 @@
 var app = derby.createApp();
 app.registerViews();
 
+//stub out app function which ill define based on data later
+app.proto.progress = function(i) {};
+
 //app.component("frame", Frame);
 //app.component("definition", Definition);
 // create the page and expose the model for use in the console
@@ -48,7 +51,7 @@ d3.csv("data/ridesourcing-sample1.csv", function(err, surveys) {
   var lonlat = [-122.4376, 37.76];
   var projection = d3.geo.mercator()
     .center(lonlat)
-    .scale(270000)
+    .scale(250000)
     .translate([width/2, height/2])
   var path = d3.geo.path()
     .projection(projection)
@@ -56,7 +59,6 @@ d3.csv("data/ridesourcing-sample1.csv", function(err, surveys) {
 
   model.set("_page.destination", true)
   app.proto.destination = function(type) {
-    console.log("tpe", type)
     model.set("_page.destination", type == "destination");
   };
 
@@ -64,30 +66,34 @@ d3.csv("data/ridesourcing-sample1.csv", function(err, surveys) {
     console.log("start")
     start();
   };
+  var scale = d3.scale.linear()
+  .domain([0, surveys.length])
+  .range([0, 250])
+
+  app.proto.progress = function(i) {
+    return scale(i);
+  }
 
   model.on("change", "_page.destination", function(){
     renderSurveys()
     renderSampled()
-  })
-
-
-  model.on("all", "_page.sampled**", function(){
-    console.log("all")
-    renderSampled()
+    renderLines();
   })
 
   model.on("change", "_page.sampled", function(){
     console.log("changed")
     renderSampled()
+    renderLines();
   })
 
 
   function proj(d) {
-    if(model.get("_page.destination")) {
-      console.log("a")
+    return proje(d, model.get("_page.destination"))
+  }
+  function proje(d, destination) {
+    if(destination) {
       return projection([d.d_lng, d.d_lat])
     }
-    console.log("b")
     return projection([d.o_lng, d.o_lat])
   }
 
@@ -95,11 +101,11 @@ d3.csv("data/ridesourcing-sample1.csv", function(err, surveys) {
   function renderSurveys() {
     console.log("od", model.get("_page.destination"))
 
-    var circles = svg.selectAll("circle.origin")
+    var circles = svg.selectAll("circle.survey")
       .data(surveys, function(d) { return d.response_ID })
 
     circles.exit().remove();
-    circles.enter().append("circle").classed("origin", true)
+    circles.enter().append("circle").classed("survey", true)
     .on("click", renderIncluded);
 
     circles
@@ -107,9 +113,9 @@ d3.csv("data/ridesourcing-sample1.csv", function(err, surveys) {
       .duration(2000)
       .ease("linear")
       .attr({
-        cx: function(d) { return proj(d)[0]},
-        cy: function(d) { return proj(d)[1]},
-        r: 10
+        cx: function(d) { var x = proj(d)[0]; return x;},
+        cy: function(d) { var y = proj(d)[1]; return y;},
+        r: 3
       })
 
   }
@@ -126,18 +132,50 @@ d3.csv("data/ridesourcing-sample1.csv", function(err, surveys) {
       .duration(2000)
       .ease("linear")
       .attr({
-        cx: function(d) { return proj(d)[0]},
-        cy: function(d) { return proj(d)[1]},
-        r: 10
+        cx: function(d) { var x = proj(d)[0]; return x;},
+        cy: function(d) { var y = proj(d)[1]; return y;},
+        r: 3
       })
-
   }
 
 
+  function renderLines() {
+    if(!sampled) return;
+    //n^2 baby
+    var lineData = [];
+    surveys.forEach(function(survey) {
+      sampled.forEach(function (smpl){
+        if(survey.response_ID === smpl.response_ID) {
+          lineData.push([survey, smpl])
+        }
+      })
+    })
+
+    var lines = svg.selectAll("line.connector")
+      .data(lineData)
+
+    lines.enter().append("line").classed("connector", true)
+
+   lines
+    .transition()
+      .duration(2000)
+      .ease("linear")
+      .attr({
+        x1: function(d) { return proj(d[0])[0]},
+        y1: function(d) { return proj(d[0])[1]},
+        x2: function(d) { return proj(d[1])[0]},
+        y2: function(d) { return proj(d[1])[1]}
+      })
+  }
+
   function sample(survey, i){
-    //included = inBuffer(survey, trips);
-    //same = sameTime(survey, included)
-    var same = sameTime(survey, trips)
+    var same, included;
+    if(model.get("_page.useInBuffer")) {
+      included = inBuffer(survey, trips);
+      same = sameTime(survey, included)
+    } else {
+      same = sameTime(survey, trips)
+    }
     console.log(survey.response_ID, same.length)
     if(!same.length) {
       zeros.push(survey);
@@ -146,7 +184,7 @@ d3.csv("data/ridesourcing-sample1.csv", function(err, surveys) {
       var smpl = same[random]
       smpl.response_ID = survey.response_ID
       sampled.push(smpl)
-      console.log("survey ", i)
+      model.set("_page.sampleProgress", i)
     }
     i++;
     if(i < surveys.length) {
@@ -164,8 +202,8 @@ d3.csv("data/ridesourcing-sample1.csv", function(err, surveys) {
     //var included = inBuffer(d, trips);
     var included = trips;
     render(included);
-    histo(included, "day");
-    histo(included, "time");
+    //histo(included, "day");
+    ////histo(included, "time");
     renderInfo(d, included);
     //histoTime(included);
   }
